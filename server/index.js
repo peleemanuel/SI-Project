@@ -5,7 +5,7 @@ import fileUpload from "express-fileupload";
 import mongoose from "mongoose";
 import fs from "fs"; 
 import dotenv from "dotenv";
-
+import Sera from "./sera_model.js";
 dotenv.config();
 const app = express();
 const port = 5000;
@@ -25,7 +25,6 @@ mongoose.connect(process.env.MONGO_URI);
 app.use(cors());
 app.use(bodyParser.json());
 
-const Sera = require("Sera");
 
 app.post('/data', async (req, res) => {
     console.log(req.body); // Log the received data

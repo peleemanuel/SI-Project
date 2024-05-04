@@ -37,4 +37,4 @@ const seraSchema = new mongoose.Schema({
 
 const Sera = mongoose.model("Sera", seraSchema);
 
-module.exports = Sera;
+export default Sera;
