@@ -1,9 +1,12 @@
 import express from "express";
-import fileUpload from "express-fileupload";
 import bodyParser from "body-parser";
 import cors from "cors";
-import fs from "fs";
+import fileUpload from "express-fileupload";
+import mongoose from "mongoose";
+import fs from "fs"; 
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
 const port = 5000;
 
@@ -16,11 +19,33 @@ app.use(
   })
 );
 
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI);
+
 app.use(cors());
 app.use(bodyParser.json());
 
-app.post('/data', (req, res) => {
+app.post('/data', async (req, res) => {
     console.log(req.body); // Log the received data
+    const { id, humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 } = req.body;
+
+    // Check if the id already exists
+    const existingData = await Sera.findOne({ id });
+    
+    // If the id already exists, update the data
+    if (existingData) {
+        await Sera.updateOne({ id }, { humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 });
+
+        console.log('Data updated');
+    } else {
+        // If the id does not exist, create a new entry
+        const newSera = new Sera({ id, humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 });
+
+        await newSera.save();
+
+        console.log('New entry saved');
+    }
+    
     res.status(200).send('Data received');
 });
 
