@@ -25,6 +25,8 @@ mongoose.connect(process.env.MONGO_URI);
 app.use(cors());
 app.use(bodyParser.json());
 
+const Sera = require("sera_model.js");
+
 app.post('/data', async (req, res) => {
     console.log(req.body); // Log the received data
     const { id, humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 } = req.body;
