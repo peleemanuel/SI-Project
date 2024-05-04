@@ -2,7 +2,7 @@
 #include <HTTPClient.h>
 #include "config.h"
 
-const char *serverName = "http://your-server-ip:3000/data"; // Server URL
+const char *serverName = "https://si-project.onrender.com/data"; // Server URL
 
 void setup()
 {
