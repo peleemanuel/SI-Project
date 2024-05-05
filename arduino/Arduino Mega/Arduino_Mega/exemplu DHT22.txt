@@ -1,0 +1,19 @@
+#include "DHT22.h"
+#define DHT1PIN 36
+
+DHT22 dht22(DHT1PIN);
+
+float hum;
+float temp;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  delay(2000);
+  temp = dht22.getTemperature();
+  hum = dht22.getHumidity();
+  Serial.println(temp,2);
+  Serial.println(hum,2);
+}
