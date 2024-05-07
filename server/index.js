@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import fs from "fs"; 
 import dotenv from "dotenv";
 import Sera from "./sera_model.js";
+import processImageClassification from "./classification.js";
 dotenv.config();
 const app = express();
 const port = 5000;
@@ -55,7 +56,7 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.post("/upload", (req, res) => {
+app.post("/upload", async(req, res) => {
   console.log("Received POST request to /upload");
 
   // If no files were uploaded, exit
@@ -91,9 +92,14 @@ app.post("/upload", (req, res) => {
   image.mv("./images/" + image.name);
 
   console.log("Image uploaded successfully:", image.name);
+  // Process image classification
+  const predictedClass = await processImageClassification(image.name);
+    
+  // Respond with the predicted class
+  res.status(200).json({ predictedClass });
 
   // All good
-  res.sendStatus(200);
+ // res.sendStatus(200);
 });
 
 app.listen(port, () => {
