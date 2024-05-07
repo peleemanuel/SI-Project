@@ -1,11 +1,16 @@
 #include <WiFi.h>
-#include <HTTPClient.h>
 #include <PubSubClient.h>
+#include <WiFiClientSecure.h>
 
-#include "config.h"
+//---- WiFi settings
+const char *ssid = "XXXXXXXXXX";
+const char *password = "XXXXXXXXXX";
 
-const char *serverName = "https://si-project.onrender.com/data"; // Server URL
-int light = 10; 
+//---- HiveMQ Cloud Broker settings
+const char *mqtt_server = "XXXXXXXXXX.s2.eu.hivemq.cloud"; // replace with your HiveMQ Cluster URL
+const char *mqtt_username = "XXXXXXXXXX";                  // replace with your Username
+const char *mqtt_password = "XXXXXXXXXX";                  // replace with your Password
+const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
@@ -49,25 +54,6 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 )EOF";
 
-void SendRequest(){
-  HTTPClient http;
-
-  // Start connection and send HTTP header
-  http.begin(serverName);
-  http.addHeader("Content-Type", "application/json");
-  // Data to send with HTTP POST
-  String httpRequestData = "{\"id\":\"SeraTest\",\"humidity\":24,\"temperature\":30,\"light\":" + String(light) +",\"soil_moisture_plant_1\":24\"soil_moisture_plant_2\":24,\"soil_moisture_plant_3\":24,\"soil_moisture_plant_4\":24}";
-
-  // Send HTTP POST request
-  int httpResponseCode = http.POST(httpRequestData);
-
-  Serial.print("HTTP Response code: ");
-  Serial.println(httpResponseCode);
-  light++;
-  // Free resources
-  http.end();
-}
-
 void setup_wifi()
 {
     delay(10);
@@ -93,6 +79,17 @@ void setup_wifi()
     Serial.println(WiFi.localIP());
 }
 
+void callback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.print("Message arrived [");
+    Serial.print(topic);
+    Serial.print("] ");
+    for (int i = 0; i < length; i++)
+    {
+        Serial.print((char)payload[i]);
+    }
+    Serial.println();
+}
 
 void reconnect()
 {
@@ -109,7 +106,6 @@ void reconnect()
             client.publish("testTopic", "Hello World!");
             // … and resubscribe
             client.subscribe("testTopic");
-            client.subscribe("UPT/SmartSera/esp32/command");  // add this line to subscribe to command topic
         }
         else
         {
@@ -120,18 +116,6 @@ void reconnect()
             delay(5000);
         }
     }
-}
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-    Serial.print("Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
-    for (int i = 0; i < length; i++)
-    {
-        Serial.print((char)payload[i]);
-    }
-    Serial.println();
 }
 
 void setup()
@@ -157,7 +141,7 @@ void loop()
     client.loop();
 
     unsigned long now = millis();
-    if (now - lastMsg > 20000)
+    if (now - lastMsg > 2000)
     {
         lastMsg = now;
         ++value;
@@ -165,7 +149,5 @@ void loop()
         Serial.print("Publish message: ");
         Serial.println(msg);
         client.publish("testTopic", msg);
-        client.publish("UPT/SmartSera/esp32/command", msg);
-
     }
 }

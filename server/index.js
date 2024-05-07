@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import fs from "fs"; 
 import dotenv from "dotenv";
 import Sera from "./sera_model.js";
+import mqtt from 'mqtt';
 import processImageClassification from "./classification.js";
 dotenv.config();
 const app = express();
@@ -25,6 +26,26 @@ mongoose.connect(process.env.MONGO_URI);
 
 app.use(cors());
 app.use(bodyParser.json());
+
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883', {
+  
+});
+
+client.on('connect', function () {
+    console.log('Connected to MQTT broker');
+    client.subscribe('testTopic', function (err) {
+        if (!err) {
+            // The message to send to the ESP32
+            client.publish('UPT/SmartSera/esp32/command', 'Turn on light');
+        }
+    });
+});
+
+client.on('message', function (topic, message) {
+    // message is a Buffer
+    console.log(topic.toString());
+    console.log(message.toString());
+});
 
 
 app.post('/data', async (req, res) => {
