@@ -34,3 +34,5 @@
 # Debug files
 config.h
 .env
+
+.gitattributes
