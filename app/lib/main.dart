@@ -8,6 +8,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF6699CC),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF6699CC),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      ),
       home: HomeScreen(),
     );
   }
@@ -48,77 +62,87 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF6699CC),
       appBar: AppBar(
         title: Text('Smart Plant Greenhouse'),
       ),
-      body: ListView.builder(
-        itemCount: plantData.length,
-        itemBuilder: (context, index) {
-          final plant = plantData[index];
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(plant['plant'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text('Humidity: ${plant['humidity']}%'),
-                  Text('Temperature: ${plant['temperature']}°C'),
-                  Text('Light: ${plant['light']} lx'),
-                  Text('Soil Moisture: ${plant['soilMoisture']}%'),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+      body: Column(
         children: [
-          FloatingActionButton(
-            onPressed: () {
-              // Logic for opening hatch
-            },
-            child: Icon(Icons.open_in_new),
-            tooltip: 'Open Hatch',
+          Expanded(
+            child: ListView.builder(
+              itemCount: plantData.length,
+              itemBuilder: (context, index) {
+                final plant = plantData[index];
+                return Card(
+                  color: Color(0xFFA7C7E7), // Light green card color
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(plant['plant'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Humidity: ${plant['humidity']}%'),
+                        Text('Temperature: ${plant['temperature']}°C'),
+                        Text('Light: ${plant['light']} lx'),
+                        Text('Soil Moisture: ${plant['soilMoisture']}%'),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
           SizedBox(height: 16),
-          FloatingActionButton(
-            onPressed: () {
-              // Logic for turning light on/off
-            },
-            child: Icon(Icons.lightbulb),
-            tooltip: 'Turn Light On/Off',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FloatingActionButton.extended(
+                onPressed: () {
+                  // Logic for opening hatch
+                },
+                label: Text('Open Hatch', style: TextStyle(color: Colors.white)),
+                icon: Icon(Icons.open_in_new, color: Colors.white),
+              ),
+              FloatingActionButton.extended(
+                onPressed: () {
+                  // Logic for turning light on/off
+                },
+                label: Text('Turn On/Off Light', style: TextStyle(color: Colors.white)),
+                icon: Icon(Icons.lightbulb, color: Colors.white),
+              ),
+              FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AddDataScreen()),
+                  );
+                },
+                label: Text('Add Flower', style: TextStyle(color: Colors.white)),
+                icon: Icon(Icons.add, color: Colors.white),
+              ),
+            ],
           ),
           SizedBox(height: 16),
-          FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddDataScreen()),
-              );
-            },
-            child: Icon(Icons.add),
-            tooltip: 'Add Data',
-          ),
         ],
       ),
     );
   }
 }
 
-class AddDataScreen extends StatelessWidget {
-  final TextEditingController tempMinController = TextEditingController();
-  final TextEditingController tempMaxController = TextEditingController();
-  final TextEditingController humiditySoilMinController = TextEditingController();
-  final TextEditingController humiditySoilMaxController = TextEditingController();
-  final TextEditingController humidityAirMinController = TextEditingController();
-  final TextEditingController humidityAirMaxController = TextEditingController();
-  final TextEditingController lightController = TextEditingController();
+class AddDataScreen extends StatefulWidget {
+  @override
+  _AddDataScreenState createState() => _AddDataScreenState();
+}
+
+class _AddDataScreenState extends State<AddDataScreen> {
+  int soilHumidity = 0;
+  int temperature = 0;
+  int light = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF6699CC),
       appBar: AppBar(
         title: Text('Add Data'),
       ),
@@ -126,42 +150,81 @@ class AddDataScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: tempMinController,
-              decoration: InputDecoration(labelText: 'Min Temperature'),
+            Card(
+              color: Color(0xFFA7C7E7), // Light green card color
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: buildIncrementDecrementField('Soil Humidity', soilHumidity, (newValue) {
+                  setState(() {
+                    soilHumidity = newValue;
+                  });
+                }),
+              ),
             ),
-            TextField(
-              controller: tempMaxController,
-              decoration: InputDecoration(labelText: 'Max Temperature'),
+            SizedBox(height: 16),
+            Card(
+              color: Color(0xFFA7C7E7), // Light green card color
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: buildIncrementDecrementField('Temperature', temperature, (newValue) {
+                  setState(() {
+                    temperature = newValue;
+                  });
+                }),
+              ),
             ),
-            TextField(
-              controller: humiditySoilMinController,
-              decoration: InputDecoration(labelText: 'Min Soil Humidity'),
+            SizedBox(height: 16),
+            Card(
+              color: Color(0xFFA7C7E7), // Light green card color
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: buildIncrementDecrementField('Light', light, (newValue) {
+                  setState(() {
+                    light = newValue;
+                  });
+                }),
+              ),
             ),
-            TextField(
-              controller: humiditySoilMaxController,
-              decoration: InputDecoration(labelText: 'Max Soil Humidity'),
-            ),
-            TextField(
-              controller: humidityAirMinController,
-              decoration: InputDecoration(labelText: 'Min Air Humidity'),
-            ),
-            TextField(
-              controller: humidityAirMaxController,
-              decoration: InputDecoration(labelText: 'Max Air Humidity'),
-            ),
-            TextField(
-              controller: lightController,
-              decoration: InputDecoration(labelText: 'Light (lx)'),
-            ),
-            ElevatedButton(
+            SizedBox(height: 16),
+            FloatingActionButton.extended(
               onPressed: () {
                 // Code to save data
               },
-              child: Text('Save Data'),
+              label: Text('Save Data', style: TextStyle(color: Colors.white)),
+              icon: Icon(Icons.save, color: Colors.white),
+              backgroundColor: Color(0xFF6699CC),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildIncrementDecrementField(String label, int currentValue, ValueChanged<int> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 16, color: Colors.black)),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () {
+                  if (currentValue > 0) onChanged(currentValue - 1);
+                },
+                icon: Icon(Icons.remove, color: Colors.black),
+              ),
+              Text('$currentValue', style: TextStyle(fontSize: 16, color: Colors.black)),
+              IconButton(
+                onPressed: () {
+                  onChanged(currentValue + 1);
+                },
+                icon: Icon(Icons.add, color: Colors.black),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

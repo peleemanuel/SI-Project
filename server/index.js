@@ -3,7 +3,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import fileUpload from "express-fileupload";
 import mongoose from "mongoose";
-import fs from "fs"; 
+import fs from "fs";
 import dotenv from "dotenv";
 import Sera from "./sera_model.js";
 import mqtt from 'mqtt';
@@ -28,7 +28,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const client = mqtt.connect('mqtt://broker.hivemq.com:1883', {
-  
+
 });
 
 client.on('connect', function () {
@@ -54,7 +54,7 @@ app.post('/data', async (req, res) => {
 
     // Check if the id already exists
     const existingData = await Sera.findOne({ id });
-    
+
     // If the id already exists, update the data
     if (existingData) {
         await Sera.updateOne({ id }, { humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 });
@@ -68,7 +68,7 @@ app.post('/data', async (req, res) => {
 
         console.log('New entry saved');
     }
-    
+
     res.status(200).send('Data received');
 });
 
@@ -115,7 +115,7 @@ app.post("/upload", async(req, res) => {
   console.log("Image uploaded successfully:", image.name);
   // Process image classification
   const predictedClass = await processImageClassification(image.name);
-    
+
   // Respond with the predicted class
   res.status(200).json({ predictedClass });
 
