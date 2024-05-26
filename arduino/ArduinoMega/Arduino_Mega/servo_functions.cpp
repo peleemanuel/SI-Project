@@ -9,3 +9,11 @@ void setServoAngle(Servo servo, int angle) {
     servo.write(angle);
   }
 }
+
+void closeServo(Servo servo) {
+  servo.write(SERVO_CLOSE);
+}
+
+void openServo(Servo servo) {
+  servo.write(SERVO_OPEN);
+}

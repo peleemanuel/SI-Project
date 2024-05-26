@@ -1,67 +1,256 @@
+#include "constants.h"
+#include "pins.h"
 #include "relay_functions.h"
-#define RELAY1 40
-#define RELAY2 38
-
+#include "DHT22.h"
 #include "light_sensor.h"
-#define LIGHTSENSOR A1
-
 #include "servo_functions.h"
-#define SERVOPIN 9
+#include "soil_moisture.h"
+
+DHT22 dhtInterior(DHT1PIN);
+DHT22 dhtExterior(DHT2PIN);
 
 Servo servo;
 
+float soil_hum1;
+float soil_hum2;
+float soil_hum3;
+float soil_hum4;
+
+unsigned long relayWater1Timer = 0;  // Stores the last time RELAY_WATER_1 was turned on
+bool relayWater1Active = false;      // Tracks whether the relay should currently be on
+unsigned long relayWater2Timer = 0;  // Stores the last time RELAY_WATER_2 was turned on
+bool relayWater2Active = false;      // Tracks whether the relay should currently be on
+unsigned long relayWater3Timer = 0;  // Stores the last time RELAY_WATER_3 was turned on
+bool relayWater3Active = false;      // Tracks whether the relay should currently be on
+unsigned long relayWater4Timer = 0;  // Stores the last time RELAY_WATER_4 was turned on
+bool relayWater4Active = false;      // Tracks whether the relay should currently be on
+
+bool relayLightBand = false;
+
+float light;
+float hum1;
+float tempInterior;
+float hum2;
+float tempExterior;
+
+bool workingMode;
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("beginning");
 
+  Serial1.begin(115200);  // Serial1 for TX1 and RX1 pins
+
+  /* Setups */
   setupServo(servo, SERVOPIN);
-  setServoAngle(servo, 90);
+  setupSoilMoisture(SOIL_SENSOR1);
+  setupSoilMoisture(SOIL_SENSOR2);
+  setupSoilMoisture(SOIL_SENSOR3);
+  setupSoilMoisture(SOIL_SENSOR4);
+  setupLightSensor(LIGHTSENSOR);
 
-  delay(500);
-  setServoAngle(servo, 180);
+  setupRelay(RELAY_LED_BAND);
+  setupRelay(RELAY_WATER_1);
+  setupRelay(RELAY_WATER_2);
+  setupRelay(RELAY_WATER_3);
+  setupRelay(RELAY_WATER_4);
+  setupRelay(RELAY6);
+  turnOffRelay(RELAY_LED_BAND);
+  turnOffRelay(RELAY_WATER_1);
+  turnOffRelay(RELAY_WATER_2);
+  turnOffRelay(RELAY_WATER_3);
+  turnOffRelay(RELAY_WATER_4);
+  turnOffRelay(RELAY6);
 
-  delay(2500);
-  setServoAngle(servo, 90);
+  closeServo(servo);
 
-  // myServo.write(180);
-  // delay(1500);
-
-  // myServo.write(90);
-  // delay(1500);
-
-  // myServo.write(0);
-  // delay(1500);
+  workingMode = AUTO_MODE;
 }
 
+unsigned long previousMillis = 0;
+
 void loop() {
+  unsigned long currentMillis = millis();
+  // Serial.println("Verific serialul");
+  if (Serial.available() > 0) {
 
-  // delay(500);
-  // Serial.println(analogRead(A1));
-  // Serial.println(getLight(LIGHTSENSOR));
-  // if (Serial.available() > 0) {
-  //   // Citește caracterul primit
-  //   String receivedString = Serial.readString();
-  //   receivedString.trim();
+    String receivedString = Serial.readString();
+    int serialOP = 0;
+    if (isNumber(receivedString)) {
+      serialOP = atoi(receivedString);
+    } else {
+      serialOP = 0;
+      Serial.println(receivedString);
+    }
 
-  //   if (strcmp(receivedString.c_str(), "stanga usor") == 0) {
-  //     Serial.println("da frate");
-  //     myServo.write(113);
-  //   }
+    Serial.print("Received number: ");
+    Serial.println(serialOP);
 
-  //   if (strcmp(receivedString.c_str(), "stanga tare") == 0) {
-  //     myServo.write(180);
-  //   }
+    // see the command from ESP
+    switch (serialOP >> 6) {
+      case NO_OP:
+        Serial.println("NO_OP");
+        break;
 
-  //   if (strcmp(receivedString.c_str(), "dreapta usor") == 0) {
-  //     myServo.write(67);
-  //   }
+      case MODE_OP:
+        Serial.println("MODE_OP");
 
-  //   if (strcmp(receivedString.c_str(), "dreapta tare") == 0) {
-  //     myServo.write(0);
-  //   }
+        if (serialOP & MODE_BIT) {
+          workingMode = AUTO_MODE;
+        } else {
+          workingMode = MANUAL_MODE;
+          turnOffRelay(RELAY_LED_BAND);
+          turnOffRelay(RELAY_WATER_1);
+          turnOffRelay(RELAY_WATER_2);
+          turnOffRelay(RELAY_WATER_3);
+          turnOffRelay(RELAY_WATER_4);
+          turnOffRelay(RELAY6);
+        }
+        break;
 
-  //   if (strcmp(receivedString.c_str(), "stop") == 0) {
-  //     myServo.write(90);
-  //   }
-  // }
+      case SERVO_OP:
+        Serial.println("SERVO_OP");
+
+        if (workingMode == MANUAL_MODE) {
+          if (serialOP & SERVO_BIT) {
+            setServoAngle(servo, SERVO_OPEN);
+          } else {
+            setServoAngle(servo, SERVO_CLOSE);
+          }
+        }
+
+        break;
+
+      case RELAY_OP:
+        Serial.println("RELAY_OP");
+
+        if (workingMode == MANUAL_MODE) {
+          if (serialOP & RELAY_LED_BAND_BIT) {
+            relayLightBand = !relayLightBand;
+            if (relayLightBand) {
+              turnOnRelay(RELAY_LED_BAND);
+            } else {
+              turnOffRelay(RELAY_LED_BAND);
+            }
+          }
+
+
+          // Handling RELAY_WATER_1 with automatic turn-off after 3 seconds
+          if (serialOP & RELAY_WATER_1_BIT) {
+            if (!relayWater1Active) {  // Only turn on if it was previously off
+              turnOnRelay(RELAY_WATER_1);
+              relayWater1Timer = currentMillis;  // Reset the timer
+              relayWater1Active = true;          // Mark the relay as active
+            }
+          }
+
+          // Handling RELAY_WATER_2 with automatic turn-off after 3 seconds
+          if (serialOP & RELAY_WATER_2_BIT) {
+            if (!relayWater2Active) {  // Only turn on if it was previously off
+              turnOnRelay(RELAY_WATER_2);
+              relayWater2Timer = currentMillis;  // Reset the timer
+              relayWater2Active = true;          // Mark the relay as active
+            }
+          }
+          // Handling RELAY_WATER_3 with automatic turn-off after 3 seconds
+          if (serialOP & RELAY_WATER_3_BIT) {
+            if (!relayWater3Active) {  // Only turn on if it was previously off
+              turnOnRelay(RELAY_WATER_3);
+              relayWater3Timer = currentMillis;  // Reset the timer
+              relayWater3Active = true;          // Mark the relay as active
+            }
+          }
+          // Handling RELAY_WATER_4 with automatic turn-off after 3 seconds
+          if (serialOP & RELAY_WATER_4_BIT) {
+            if (!relayWater4Active) {  // Only turn on if it was previously off
+              turnOnRelay(RELAY_WATER_4);
+              relayWater4Timer = currentMillis;  // Reset the timer
+              relayWater4Active = true;          // Mark the relay as active
+            }
+          }
+
+          if (serialOP & RELAY6_BIT) {
+            turnOnRelay(RELAY6);
+          }
+          if (!(serialOP & RELAY6_BIT)) {
+            turnOffRelay(RELAY6);
+          }
+        }
+        break;
+    }
+  }
+
+  // periodically check: temp, moisture, light
+  if (currentMillis - previousMillis >= WAITDELAY) {
+    previousMillis = currentMillis;
+
+    // soil moisture
+    soil_hum1 = getSoilMoisture(SOIL_SENSOR1);
+    soil_hum2 = getSoilMoisture(SOIL_SENSOR2);
+    soil_hum3 = getSoilMoisture(SOIL_SENSOR3);
+    soil_hum4 = getSoilMoisture(SOIL_SENSOR4);
+
+    // temperature
+    tempInterior = dhtInterior.getTemperature();
+    tempExterior = dhtExterior.getTemperature();
+    hum1 = dhtInterior.getHumidity();
+    hum2 = dhtExterior.getHumidity();
+
+    if (tempInterior > INTERIOR_TEMP_THRESHOLD && tempInterior > tempExterior) {
+      if (workingMode == AUTO_MODE) {
+        openServo(servo);
+      } else {
+        if (workingMode == AUTO_MODE) {
+          closeServo(servo);
+        }
+      }
+    }
+
+    unsigned int noise = 0;
+    if (relayWater1Active) {
+      noise += 6;
+    }
+    if (relayWater2Active) {
+      noise += 6;
+    }
+    if (relayWater3Active) {
+      noise += 6;
+    }
+    if (relayWater4Active) {
+      noise += 6;
+    }
+    if (relayLightBand) {
+      noise += 6;
+    }
+    // light
+    light = getLight(LIGHTSENSOR);
+    Serial.println(light);
+    if (light < LIGHT_THRESHOLD + noise) {
+      if (workingMode == AUTO_MODE) {
+        turnOnRelay(RELAY_LED_BAND);
+      }
+    } else {
+      if (workingMode == AUTO_MODE) {
+        turnOffRelay(RELAY_LED_BAND);
+      }
+    }
+
+    autoStopWaterPump(RELAY_WATER_1, relayWater1Timer, relayWater1Active);
+    autoStopWaterPump(RELAY_WATER_2, relayWater2Timer, relayWater2Active);
+    autoStopWaterPump(RELAY_WATER_3, relayWater3Timer, relayWater3Active);
+    autoStopWaterPump(RELAY_WATER_4, relayWater4Timer, relayWater4Active);
+
+    // send data to ESP
+    String parameters = "{\"id\":\"SeraTest\",\"humidity1\":" + String(hum1) + ",\"humidity2\":" + String(hum2) + ",\"temperatureInterior\":" + String(tempInterior) + ",\"temperatureExterior\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_moisture_plant_1\":" + String(soil_hum1) + ",\"soil_moisture_plant_2\":" + String(soil_hum1) + ",\"soil_moisture_plant_3\":" + String(soil_hum1) + ",\"soil_moisture_plant_4\":" + String(soil_hum1) + "}";
+    Serial1.println(parameters);
+  }
+}
+
+bool isNumber(String str) {
+  for (int i = 0; i < str.length(); i++) {
+    if (!isDigit(str.charAt(i))) {
+      return false;  // Dacă găsim un caracter care nu este cifră, returnăm false
+    }
+  }
+  return true;  // Toate caracterele sunt cifre, returnăm true
 }
