@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:async'; // Importă Timer
+import 'dart:async';
 
 void main() {
   runApp(MyApp());
@@ -35,22 +35,42 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> plantData = [];
+  Map<String, dynamic> statusData = {"plant_status": "unknown", "pest_status": "unknown"};
   bool isLoading = true;
-  Timer? timer; // Definește un Timer
+  Timer? timer;
+  bool isHatchOpen = false; // Track the state of the hatch
+  bool isLightOn = false; // Track the state of the light
 
   @override
   void initState() {
     super.initState();
-    fetchPlantData();
-    timer = Timer.periodic(Duration(seconds: 20), (Timer t) => fetchPlantData()); // Setează Timer-ul pentru a face fetch la date la fiecare 20 de secunde
+    WidgetsBinding.instance.addObserver(this);
+    fetchData();
+    timer = Timer.periodic(Duration(seconds: 20), (Timer t) {
+      fetchData();
+    });
   }
 
   @override
   void dispose() {
-    timer?.cancel(); // Anulează Timer-ul când ecranul este închis
+    WidgetsBinding.instance.removeObserver(this);
+    timer?.cancel();
+    sendAutoModeRequest();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      sendAutoModeRequest();
+    }
+  }
+
+  Future<void> fetchData() async {
+    await fetchPlantData();
+    await fetchStatusData();
   }
 
   Future<void> fetchPlantData() async {
@@ -58,15 +78,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final response = await http.get(Uri.parse('http://192.168.1.115:5000/get_sera_data'));
 
       if (response.statusCode == 200) {
-        print('Data received: ${response.body}');
         setState(() {
           plantData = List<Map<String, dynamic>>.from(json.decode(response.body));
-          // Ensure auto_mode_manual_mode is not null
           for (var plant in plantData) {
             plant['auto_mode_manual_mode'] ??= true;
           }
           isLoading = false;
         });
+        print("Plant data fetched successfully");
       } else {
         throw Exception('Failed to load data');
       }
@@ -75,6 +94,23 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoading = false;
       });
       print('Error fetching data: $error');
+    }
+  }
+
+  Future<void> fetchStatusData() async {
+    try {
+      final response = await http.get(Uri.parse('http://192.168.1.115:5000/get_status'));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          statusData = json.decode(response.body);
+        });
+        print("Status data fetched successfully");
+      } else {
+        throw Exception('Failed to load status');
+      }
+    } catch (error) {
+      print('Error fetching status: $error');
     }
   }
 
@@ -105,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           plantData[0]['auto_mode_manual_mode'] = value;
         });
+        sendModeChangeMessage(value);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Mode updated successfully!')),
         );
@@ -113,6 +150,29 @@ class _HomeScreenState extends State<HomeScreen> {
           SnackBar(content: Text('Failed to update mode!')),
         );
       }
+    }
+  }
+
+  Future<void> sendModeChangeMessage(bool isAutoMode) async {
+    final url = Uri.parse('http://192.168.1.115:5000/action');
+    final response = await http.post(
+      url,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'message': isAutoMode ? 'Switched to Auto Mode' : 'Switched to Manual Mode',
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mode change sent: ${isAutoMode ? 'Auto' : 'Manual'}')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send mode change message')),
+      );
     }
   }
 
@@ -137,6 +197,51 @@ class _HomeScreenState extends State<HomeScreen> {
         SnackBar(content: Text('Failed to send action')),
       );
     }
+  }
+
+  Future<void> sendAutoModeRequest() async {
+    if (plantData.isNotEmpty) {
+      final url = Uri.parse('http://192.168.1.115:5000/add_sera_data');
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'sera_id': plantData[0]['sera_id'],
+          'light': plantData[0]['light'],
+          'temp_in': plantData[0]['temp_in'],
+          'temp_out': plantData[0]['temp_out'],
+          'hum_in': plantData[0]['hum_in'],
+          'hum_out': plantData[0]['hum_out'],
+          'soil_hum1': plantData[0]['soil_hum1'],
+          'soil_hum2': plantData[0]['soil_hum2'],
+          'soil_hum3': plantData[0]['soil_hum3'],
+          'soil_hum4': plantData[0]['soil_hum4'],
+          'auto_mode_manual_mode': true, // Set mode to auto
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        print('Switched to Auto Mode before closing');
+      } else {
+        print('Failed to switch to Auto Mode before closing');
+      }
+    }
+  }
+
+  void toggleHatch() {
+    setState(() {
+      isHatchOpen = !isHatchOpen;
+    });
+    sendRequest(isHatchOpen ? 'Hatch opened' : 'Hatch closed');
+  }
+
+  void toggleLight() {
+    setState(() {
+      isLightOn = !isLightOn;
+    });
+    sendRequest(isLightOn ? 'Light turned on' : 'Light turned off');
   }
 
   @override
@@ -172,6 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('Soil Humidity 2: ${plant['soil_hum2']}%'),
                   Text('Soil Humidity 3: ${plant['soil_hum3']}%'),
                   Text('Soil Humidity 4: ${plant['soil_hum4']}%'),
+                  Text('Plant Status: ${statusData['plant_status']}'), // Afișează statusul plantei
+                  Text('Pest Status: ${statusData['pest_status']}'),   // Afișează statusul dăunătorilor
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -198,22 +305,18 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
-                    ? () {
-                  sendRequest('Open Hatch');
-                }
+                    ? toggleHatch
                     : null,
-                label: Text('Open Hatch', style: TextStyle(color: Colors.white)),
-                icon: Icon(Icons.open_in_new, color: Colors.white),
+                label: Text(isHatchOpen ? 'Close Hatch' : 'Open Hatch', style: TextStyle(color: Colors.white)),
+                icon: Icon(isHatchOpen ? Icons.close : Icons.open_in_new, color: Colors.white),
                 backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
               ),
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
-                    ? () {
-                  sendRequest('Turn On/Off Light');
-                }
+                    ? toggleLight
                     : null,
-                label: Text('Turn On/Off Light', style: TextStyle(color: Colors.white)),
-                icon: Icon(Icons.lightbulb, color: Colors.white),
+                label: Text(isLightOn ? 'Turn Off Light' : 'Turn On Light', style: TextStyle(color: Colors.white)),
+                icon: Icon(isLightOn ? Icons.lightbulb_outline : Icons.lightbulb, color: Colors.white),
                 backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
               ),
             ],

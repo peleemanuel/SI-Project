@@ -1,5 +1,4 @@
 from flask import Flask, request, render_template, jsonify
-import os
 import psycopg2
 from werkzeug.utils import secure_filename
 import logging
@@ -97,7 +96,19 @@ def add_sera():
     cur.close()
     conn.close()
 
+    if auto_mode_manual_mode:
+        print("The application has been set to Auto Mode")
+
     return jsonify({"message": "Data added successfully!"}), 201
+
+@app.route('/get_status', methods=['GET'])
+def get_status():
+    status = {
+        "plant_status": "healthy",
+        "pest_status": "healthy"
+    }
+    print("Status data fetched successfully")
+    return jsonify(status), 200
 
 @app.route('/get_sera_data', methods=['GET'])
 def get_sera_data():
@@ -126,6 +137,7 @@ def get_sera_data():
             'auto_mode_manual_mode': row[10]
         })
 
+    print("Sera data fetched successfully")
     return jsonify(sera_data), 200
 
 # Route to handle actions from buttons
@@ -183,7 +195,7 @@ def download_first_photo():
         cur.execute("SELECT photo_data FROM photos LIMIT 1")
         photo = cur.fetchone()
 
-        if photo:
+        if (photo):
             # Save the photo data to a file
             with open('bbldrizzy.jpg', 'wb') as file:
                 file.write(photo[0])
