@@ -77,7 +77,7 @@ void loop() {
     String receivedString = Serial.readString();
     int serialOP = 0;
     if (isNumber(receivedString)) {
-      serialOP = atoi(receivedString);
+      serialOP = atoi(receivedString.c_str());
     } else {
       serialOP = 0;
       Serial.println(receivedString);
@@ -240,8 +240,10 @@ void loop() {
     autoStopWaterPump(RELAY_WATER_3, relayWater3Timer, relayWater3Active);
     autoStopWaterPump(RELAY_WATER_4, relayWater4Timer, relayWater4Active);
 
+
+  String httpRequestData = "{\"sera_id\":1,\"hum_in\":24,\"hum_out\":24,\"temp_in\":30,\"temp_out\":30,\"light\":" + String(light) + ",\"soil_hum1\":24,\"soil_hum2\":24,\"soil_hum3\":24,\"soil_hum4\":24}";
     // send data to ESP
-    String parameters = "{\"id\":\"SeraTest\",\"humidity1\":" + String(hum1) + ",\"humidity2\":" + String(hum2) + ",\"temperatureInterior\":" + String(tempInterior) + ",\"temperatureExterior\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_moisture_plant_1\":" + String(soil_hum1) + ",\"soil_moisture_plant_2\":" + String(soil_hum1) + ",\"soil_moisture_plant_3\":" + String(soil_hum1) + ",\"soil_moisture_plant_4\":" + String(soil_hum1) + "}";
+    String parameters = "{\"sera_id\":1,\"hum_in\":" + String(hum1) + ",\"hum_out\":" + String(hum2) + ",\"temp_in\":" + String(tempInterior) + ",\"temp_out\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_hum1\":" + String(soil_hum1) + ",\"soil_hum2\":" + String(soil_hum2) + ",\"soil_hum3\":" + String(soil_hum3) + ",\"soil_hum4\":" + String(soil_hum4) + "}";
     Serial1.println(parameters);
   }
 }

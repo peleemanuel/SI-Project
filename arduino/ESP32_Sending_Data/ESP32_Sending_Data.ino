@@ -27,6 +27,8 @@
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
+int light = 20;
+
 const char *htmlPage = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -131,25 +133,35 @@ void setup() {
 }
 
 void loop() {
-  //delay(3000);  // Wait for 3 seconds
-  //camera_fb_t *fb = esp_camera_fb_get();
-  //if (!fb) {
-  //  Serial.println("Camera capture failed");
-  //  return;
-  //}
-  //
-  //Serial.println("Sending photo to server...");
-  //
-  //if (sendPhoto(fb->buf, fb->len)) {
-  //  Serial.println("Photo sent successfully");
-  //} else {
-  //  Serial.println("Failed to send photo");
-  //}
-  //
-  //esp_camera_fb_return(fb);
-  //
-  //ws.binaryAll(fb->buf, fb->len);  // Send image over WebSocket
-  //esp_camera_fb_return(fb);
+  if (Serial.available() > 0) {
+    // Citește caracterul primit
+    String receivedString = Serial.readString();
+    SendRequest(receivedString);
+  }
+
+  // delay(10000);  // Wait for 3 seconds
+
+  // SendRequest();
+  // light++;
+
+  // camera_fb_t *fb = esp_camera_fb_get();
+  // if (!fb) {
+  //   Serial.println("Camera capture failed");
+  //   return;
+  // }
+
+  // Serial.println("Sending photo to server...");
+
+  // if (sendPhoto(fb->buf, fb->len)) {
+  //   Serial.println("Photo sent successfully");
+  // } else {
+  //   Serial.println("Failed to send photo");
+  // }
+
+  // esp_camera_fb_return(fb);
+
+  // ws.binaryAll(fb->buf, fb->len);  // Send image over WebSocket
+  // esp_camera_fb_return(fb);
 }
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -180,4 +192,23 @@ bool sendPhoto(uint8_t *image, size_t len) {
 
   http.end();
   return httpResponseCode == 200;
+}
+
+void SendRequest(String httpRequestData) {
+  HTTPClient http;
+
+  // Start connection and send HTTP header
+  http.begin("http://192.168.1.246:5000/add_sera_data");
+  http.addHeader("Content-Type", "application/json");
+
+  // Send HTTP POST request
+  int httpResponseCode = http.POST(httpRequestData);
+
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
+  Serial.print("Sent data: ");
+  Serial.println(httpRequestData);
+
+  // Free resources
+  http.end();
 }

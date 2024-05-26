@@ -37,7 +37,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> plantData = [];
-  Map<String, dynamic> statusData = {"plant_status": "unknown", "pest_status": "unknown"};
+  Map<String, dynamic> statusData = {
+    "plant_status": "unknown",
+    "pest_status": "unknown"
+  };
   bool isLoading = true;
   Timer? timer;
   bool isHatchOpen = false; // Track the state of the hatch
@@ -75,11 +78,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> fetchPlantData() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.115:5000/get_sera_data'));
+      final response =
+          await http.get(Uri.parse('http://localhost:5000/get_sera_data'));
 
       if (response.statusCode == 200) {
         setState(() {
-          plantData = List<Map<String, dynamic>>.from(json.decode(response.body));
+          plantData =
+              List<Map<String, dynamic>>.from(json.decode(response.body));
           for (var plant in plantData) {
             plant['auto_mode_manual_mode'] ??= true;
           }
@@ -99,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> fetchStatusData() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.115:5000/get_status'));
+      final response =
+          await http.get(Uri.parse('http://localhost:5000/get_status'));
 
       if (response.statusCode == 200) {
         setState(() {
@@ -116,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> updateAutoMode(bool value) async {
     if (plantData.isNotEmpty) {
-      final url = Uri.parse('http://192.168.1.115:5000/add_sera_data');
+      final url = Uri.parse('http://localhost:5000/add_sera_data');
       final response = await http.post(
         url,
         headers: <String, String>{
@@ -154,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> sendModeChangeMessage(bool isAutoMode) async {
-    final url = Uri.parse('http://192.168.1.115:5000/action');
+    final url = Uri.parse('http://localhost:5000/action');
     final response = await http.post(
       url,
       headers: <String, String>{
@@ -167,7 +173,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Mode change sent: ${isAutoMode ? 'Auto' : 'Manual'}')),
+        SnackBar(
+            content:
+                Text('Mode change sent: ${isAutoMode ? 'Auto' : 'Manual'}')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> sendRequest(String message) async {
-    final url = Uri.parse('http://192.168.1.115:5000/action');
+    final url = Uri.parse('http://localhost:5000/action');
     final response = await http.post(
       url,
       headers: <String, String>{
@@ -201,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> sendAutoModeRequest() async {
     if (plantData.isNotEmpty) {
-      final url = Uri.parse('http://192.168.1.115:5000/add_sera_data');
+      final url = Uri.parse('http://localhost:5000/add_sera_data');
       final response = await http.post(
         url,
         headers: <String, String>{
@@ -241,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       isLightOn = !isLightOn;
     });
-    sendRequest(isLightOn ? '193' : '193');  //turn on off led
+    sendRequest(isLightOn ? '193' : '193'); //turn on off led
   }
 
   @override
@@ -254,49 +262,56 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : plantData.isEmpty
-          ? Center(child: Text('No data available'))
-          : ListView.builder(
-        itemCount: plantData.length,
-        itemBuilder: (context, index) {
-          final plant = plantData[index];
-          bool isAutoMode = plant['auto_mode_manual_mode'] ?? true;
-          return Card(
-            color: Color(0xFFA7C7E7),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Sera ${plant['sera_id']}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text('Light: ${plant['light']}'),
-                  Text('Temp In: ${plant['temp_in']}°C'),
-                  Text('Temp Out: ${plant['temp_out']}°C'),
-                  Text('Humidity In: ${plant['hum_in']}%'),
-                  Text('Humidity Out: ${plant['hum_out']}%'),
-                  Text('Soil Humidity 1: ${plant['soil_hum1']}%'),
-                  Text('Soil Humidity 2: ${plant['soil_hum2']}%'),
-                  Text('Soil Humidity 3: ${plant['soil_hum3']}%'),
-                  Text('Soil Humidity 4: ${plant['soil_hum4']}%'),
-                  Text('Plant Status: ${statusData['plant_status']}'), // Afișează statusul plantei
-                  Text('Pest Status: ${statusData['pest_status']}'),   // Afișează statusul dăunătorilor
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(isAutoMode ? 'Auto mode' : 'Manual mode', style: TextStyle(fontSize: 16)),  //65 automode  --- 64 manual mode
-                      Switch(
-                        value: isAutoMode,
-                        onChanged: (value) {
-                          updateAutoMode(value);
-                        },
+              ? Center(child: Text('No data available'))
+              : ListView.builder(
+                  itemCount: plantData.length,
+                  itemBuilder: (context, index) {
+                    final plant = plantData[index];
+                    bool isAutoMode = plant['auto_mode_manual_mode'] ?? true;
+                    return Card(
+                      color: Color(0xFFA7C7E7),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Sera ${plant['sera_id']}',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('Light: ${plant['light']}'),
+                            Text('Temp In: ${plant['temp_in']}°C'),
+                            Text('Temp Out: ${plant['temp_out']}°C'),
+                            Text('Humidity In: ${plant['hum_in']}%'),
+                            Text('Humidity Out: ${plant['hum_out']}%'),
+                            Text('Soil Humidity 1: ${plant['soil_hum1']}%'),
+                            Text('Soil Humidity 2: ${plant['soil_hum2']}%'),
+                            Text('Soil Humidity 3: ${plant['soil_hum3']}%'),
+                            Text('Soil Humidity 4: ${plant['soil_hum4']}%'),
+                            Text(
+                                'Plant Status: ${statusData['plant_status']}'), // Afișează statusul plantei
+                            Text(
+                                'Pest Status: ${statusData['pest_status']}'), // Afișează statusul dăunătorilor
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(isAutoMode ? 'Auto mode' : 'Manual mode',
+                                    style: TextStyle(
+                                        fontSize:
+                                            16)), //65 automode  --- 64 manual mode
+                                Switch(
+                                  value: isAutoMode,
+                                  onChanged: (value) {
+                                    updateAutoMode(value);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                    );
+                  },
+                ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -304,20 +319,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? toggleHatch
                     : null,
-                label: Text(isHatchOpen ? 'Close hatch' : 'Open hatch', style: TextStyle(color: Colors.white)), //128-deschide trapa, 129 inchide trapa
-                icon: Icon(isHatchOpen ? Icons.close : Icons.open_in_new, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                label: Text(isHatchOpen ? 'Close hatch' : 'Open hatch',
+                    style: TextStyle(
+                        color: Colors
+                            .white)), //128-deschide trapa, 129 inchide trapa
+                icon: Icon(isHatchOpen ? Icons.close : Icons.open_in_new,
+                    color: Colors.white),
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? toggleLight
                     : null,
-                label: Text(isLightOn ? 'Turn off light' : 'Turn on light', style: TextStyle(color: Colors.white)), //on/off lumina
-                icon: Icon(isLightOn ? Icons.lightbulb_outline : Icons.lightbulb, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                label: Text(isLightOn ? 'Turn off light' : 'Turn on light',
+                    style: TextStyle(color: Colors.white)), //on/off lumina
+                icon: Icon(
+                    isLightOn ? Icons.lightbulb_outline : Icons.lightbulb,
+                    color: Colors.white),
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
             ],
           ),
@@ -326,24 +356,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('194'); //Water Plant 1
-                }
+                        sendRequest('194'); //Water Plant 1
+                      }
                     : null,
-                label: Text('Water Plant 1', style: TextStyle(color: Colors.white)),
+                label: Text('Water Plant 1',
+                    style: TextStyle(color: Colors.white)),
                 icon: Icon(Icons.water_damage, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('196'); //Water Plant 2
-                }
+                        sendRequest('196'); //Water Plant 2
+                      }
                     : null,
-                label: Text('Water Plant 2', style: TextStyle(color: Colors.white)),
+                label: Text('Water Plant 2',
+                    style: TextStyle(color: Colors.white)),
                 icon: Icon(Icons.water_damage, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
             ],
           ),
@@ -352,24 +392,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('200'); //Water Plant 3
-                }
+                        sendRequest('200'); //Water Plant 3
+                      }
                     : null,
-                label: Text('Water Plant 3', style: TextStyle(color: Colors.white)),
+                label: Text('Water Plant 3',
+                    style: TextStyle(color: Colors.white)),
                 icon: Icon(Icons.water_damage, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
               FloatingActionButton.extended(
-                onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
+                onPressed: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('208'); //Water Plant 4
-                }
+                        sendRequest('208'); //Water Plant 4
+                      }
                     : null,
-                label: Text('Water Plant 4', style: TextStyle(color: Colors.white)),
+                label: Text('Water Plant 4',
+                    style: TextStyle(color: Colors.white)),
                 icon: Icon(Icons.water_damage, color: Colors.white),
-                backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
+                backgroundColor: plantData.isNotEmpty &&
+                        !plantData[0]['auto_mode_manual_mode']
+                    ? Color(0xFF6699CC)
+                    : Colors.grey,
               ),
             ],
           ),

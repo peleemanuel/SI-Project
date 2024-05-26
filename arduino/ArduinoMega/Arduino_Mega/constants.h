@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_DEFINE
 #define CONSTANTS_DEFINE
 
-#define WAITDELAY 5000  // time in milliseconds
+#define WAITDELAY 10000  // time in milliseconds
 #define WATER_PUMP_DELAY 3000 // time in mill, plant watering time
 // working mode
 #define MANUAL_MODE 0

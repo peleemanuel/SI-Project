@@ -71,6 +71,7 @@ def index():
 @app.route('/add_sera_data', methods=['POST'])
 def add_sera():
     data = request.get_json()
+    print("Data received:", data)
     sera_id = data.get('sera_id')
     light = data.get('light')
     temp_in = data.get('temp_in')
@@ -86,12 +87,22 @@ def add_sera():
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # Query pentru upsert
     cur.execute("""
-        UPDATE sera
-        SET light = %s, temp_in = %s, temp_out = %s, hum_in = %s, hum_out = %s, soil_hum1 = %s, soil_hum2 = %s, soil_hum3 = %s, soil_hum4 = %s, auto_mode_manual_mode = %s
-        WHERE sera_id = %s
-    """, (light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, auto_mode_manual_mode, sera_id))
-
+        INSERT INTO sera (sera_id, light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, auto_mode_manual_mode)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (sera_id) DO UPDATE
+        SET light = EXCLUDED.light,
+            temp_in = EXCLUDED.temp_in,
+            temp_out = EXCLUDED.temp_out,
+            hum_in = EXCLUDED.hum_in,
+            hum_out = EXCLUDED.hum_out,
+            soil_hum1 = EXCLUDED.soil_hum1,
+            soil_hum2 = EXCLUDED.soil_hum2,
+            soil_hum3 = EXCLUDED.soil_hum3,
+            soil_hum4 = EXCLUDED.soil_hum4,
+            auto_mode_manual_mode = EXCLUDED.auto_mode_manual_mode;
+    """, (sera_id, light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, auto_mode_manual_mode))
     conn.commit()
     cur.close()
     conn.close()
