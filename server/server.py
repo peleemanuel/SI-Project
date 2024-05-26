@@ -101,6 +101,7 @@ def add_sera():
 
     return jsonify({"message": "Data added successfully!"}), 201
 
+#PUNETI VALORILE CARE TREBUIE AICI****************************************************************
 @app.route('/get_status', methods=['GET'])
 def get_status():
     status = {
