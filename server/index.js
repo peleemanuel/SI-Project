@@ -29,7 +29,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const client = mqtt.connect('mqtt://broker.hivemq.com:1883', {
-  
+
 });
 
 client.on('connect', function () {
@@ -54,7 +54,7 @@ app.post('/data', async (req, res) => {
 
     // Check if the id already exists
     const existingData = await Sera.findOne({ id });
-    
+
     // If the id already exists, update the data
     if (existingData) {
         await Sera.updateOne({ id }, { humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 });
@@ -68,7 +68,7 @@ app.post('/data', async (req, res) => {
 
         console.log('New entry saved');
     }
-    
+
     res.status(200).send('Data received');
 });
 
@@ -105,9 +105,11 @@ app.post("/upload", async (req, res) => {
       return res.sendStatus(500);
     }
 
+
     try {
       const predictedClassPlants = await processImageClassification(image.name, "plants_model/plants.py");
       const predictedClassPests = await processImageClassification(image.name, "plants_model/pests.py");
+
 
       // Remove the temporary file after processing
       fs.unlinkSync(uploadPath);
