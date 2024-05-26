@@ -1,32 +1,44 @@
-from flask import Flask, request, render_template, send_from_directory, jsonify
+from flask import Flask, request, render_template, jsonify
 import os
 import psycopg2
 from werkzeug.utils import secure_filename
 import logging
+from flask_cors import CORS  # Import the CORS package
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for the Flask app
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
 # Connect to the PostgreSQL database
-
-
 def get_db_connection():
     conn = psycopg2.connect(host="localhost", dbname="postgres",
                             user="postgres", password="1234", port=5432)
     return conn
 
-# Define a route to create tables if not exist and serve the form
-
-
-@app.route('/')
-def index():
+# Function to update database schema
+def update_database_schema():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-      #  cur.execute("""
-      #             TRUNCATE TABLE photos;
-      #              """)
+        cur.execute("""
+            ALTER TABLE sera ADD COLUMN IF NOT EXISTS auto_mode_manual_mode BOOLEAN DEFAULT TRUE;
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("Error during database schema update:", e)
+
+# Define a route to create tables if not exist and serve the form
+@app.route('/')
+def index():
+    update_database_schema()  # Call the function to update the database schema
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
         cur.execute("""
         CREATE TABLE IF NOT EXISTS photos (
             photo_id SERIAL PRIMARY KEY,
@@ -45,7 +57,8 @@ def index():
         soil_hum1 FLOAT,
         soil_hum2 FLOAT,
         soil_hum3 FLOAT,
-        soil_hum4 FLOAT
+        soil_hum4 FLOAT,
+        auto_mode_manual_mode BOOLEAN DEFAULT TRUE
     );
     """)
         conn.commit()
@@ -55,7 +68,7 @@ def index():
         print("Error during database operation:", e)
     return render_template('index.html')
 
-#Routes ti handle sera date
+# Routes to handle sera data
 @app.route('/add_sera_data', methods=['POST'])
 def add_sera():
     data = request.get_json()
@@ -69,34 +82,34 @@ def add_sera():
     soil_hum2 = data.get('soil_hum2')
     soil_hum3 = data.get('soil_hum3')
     soil_hum4 = data.get('soil_hum4')
+    auto_mode_manual_mode = data.get('auto_mode_manual_mode', True)  # Default to True if not provided
 
-    
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     cur.execute("""
         UPDATE sera
-        SET light = %s, temp_in = %s, temp_out = %s, hum_in = %s, hum_out = %s, soil_hum1 = %s, soil_hum2 = %s, soil_hum3 = %s, soil_hum4 = %s
+        SET light = %s, temp_in = %s, temp_out = %s, hum_in = %s, hum_out = %s, soil_hum1 = %s, soil_hum2 = %s, soil_hum3 = %s, soil_hum4 = %s, auto_mode_manual_mode = %s
         WHERE sera_id = %s
-    """, (light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, sera_id))
-    
+    """, (light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, auto_mode_manual_mode, sera_id))
+
     conn.commit()
     cur.close()
     conn.close()
-    
-    return jsonify({"message": "Data added successfully!"}), 201  
+
+    return jsonify({"message": "Data added successfully!"}), 201
 
 @app.route('/get_sera_data', methods=['GET'])
 def get_sera_data():
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     cur.execute("SELECT * FROM sera")
     rows = cur.fetchall()
-    
+
     cur.close()
     conn.close()
-    
+
     sera_data = []
     for row in rows:
         sera_data.append({
@@ -109,15 +122,23 @@ def get_sera_data():
             'soil_hum1': row[6],
             'soil_hum2': row[7],
             'soil_hum3': row[8],
-            'soil_hum4': row[9]
+            'soil_hum4': row[9],
+            'auto_mode_manual_mode': row[10]
         })
-    
+
     return jsonify(sera_data), 200
+
+# Route to handle actions from buttons
+@app.route('/action', methods=['POST'])
+def handle_action():
+    data = request.get_json()
+    message = data.get('message')
+    print(f"Action received: {message}")
+    return jsonify({"message": f"Action {message} received!"}), 201
 
 # Route to handle file uploads ---> photo
 @app.route('/upload', methods=['POST'])
 def upload_file():
-
     try:
         if 'file' not in request.files:
             return 'No file part'
@@ -144,14 +165,12 @@ def upload_file():
         print("Error during database operation:", e)
     return jsonify({'message': 'File uploaded successfully'}), 200
 
-
 @app.route('/upload2', methods=['POST'])
 def handle_image_upload():
     image_data = request.data  # Datele imaginii, un stream de bytes
     with open('received_image.jpeg', 'wb') as f:
         f.write(image_data)  # Salvează imaginea pe disk
     return 'Image received and saved', 200
-
 
 @app.route('/download_first_photo')
 def download_first_photo():
@@ -176,7 +195,6 @@ def download_first_photo():
             return 'No photo found', 404
     except Exception as e:
         return f'An error occurred: {str(e)}', 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
