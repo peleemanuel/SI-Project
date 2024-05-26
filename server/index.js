@@ -4,6 +4,7 @@ import cors from "cors";
 import fileUpload from "express-fileupload";
 import mongoose from "mongoose";
 import fs from "fs"; 
+import path from "path";
 import dotenv from "dotenv";
 import Sera from "./sera_model.js";
 import mqtt from 'mqtt';
@@ -47,7 +48,6 @@ client.on('message', function (topic, message) {
     console.log(message.toString());
 });
 
-
 app.post('/data', async (req, res) => {
     console.log(req.body); // Log the received data
     const { id, humidity, temperature, light, soil_moisture_plant_1, soil_moisture_plant_2, soil_moisture_plant_3, soil_moisture_plant_4 } = req.body;
@@ -77,50 +77,47 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.post("/upload", async(req, res) => {
+app.post("/upload", async (req, res) => {
   console.log("Received POST request to /upload");
 
-  // If no files were uploaded, exit
-  if (!req.files) {
+  if (!req.files || !req.files.image) {
     console.log("No files uploaded");
     return res.sendStatus(400);
   }
 
-  // The name of the input field (i.e. "image") is used to retrieve the uploaded file
-  let image = req.files.image;
+  const image = req.files.image;
 
-  // If no image submitted, exit
-  if (!image) {
-    console.log("No image submitted");
-    return res.sendStatus(400);
-  }
-
-  // If does not have image mime type prevent from uploading
   if (!/^image/.test(image.mimetype)) {
     console.log("Invalid image mimetype:", image.mimetype);
     return res.sendStatus(400);
   }
 
-  // Add the timestamp to the image name
-  image.name = Date.now() + "_" + image.name;
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  const uploadDir = path.join(currentDir, 'images');
+  const uploadPath = path.join(uploadDir, image.name);
 
-  // Check if the folder exists, if not create it
-  if (!fs.existsSync("./images")) {
-    fs.mkdirSync("./images");
-  }
+  // Ensure the uploads directory exists
+  fs.mkdirSync(uploadDir, { recursive: true });
 
-  // Move the uploaded image to our upload folder
-  image.mv("./images/" + image.name);
+  image.mv(uploadPath, async (err) => {
+    if (err) {
+      console.error("Error saving file:", err);
+      return res.sendStatus(500);
+    }
 
-  console.log("Image uploaded successfully:", image.name);
-  // Process image classification
-  const predictedClass = await processImageClassification(image.name);
-    
-  // Respond with the predicted class
-  res.status(200).json({ predictedClass });
+    try {
+      const predictedClassPlants = await processImageClassification(image.name, "plants_model/plants.py");
+      const predictedClassPests = await processImageClassification(image.name, "plants_model/pests.py");
 
-  // All good
- // res.sendStatus(200);
+      // Remove the temporary file after processing
+      fs.unlinkSync(uploadPath);
+
+      res.status(200).json({ predictedClassPlants, predictedClassPests });
+    } catch (err) {
+      console.error("Error processing image classification:", err);
+      res.sendStatus(500);
+    }
+  });
 });
 
 app.listen(port, () => {
