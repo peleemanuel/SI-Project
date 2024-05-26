@@ -24,15 +24,29 @@ def index():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-                    TRUNCATE TABLE photos;
-                    """)
+      #  cur.execute("""
+      #             TRUNCATE TABLE photos;
+      #              """)
         cur.execute("""
         CREATE TABLE IF NOT EXISTS photos (
             photo_id SERIAL PRIMARY KEY,
             photo_name VARCHAR(255),
             photo_data BYTEA
         );
+    """)
+        cur.execute("""
+    CREATE TABLE IF NOT EXISTS sera (
+        sera_id SERIAL PRIMARY KEY,
+        light FLOAT,
+        temp_in FLOAT,
+        temp_out FLOAT,
+        hum_in FLOAT,
+        hum_out FLOAT,
+        soil_hum1 FLOAT,
+        soil_hum2 FLOAT,
+        soil_hum3 FLOAT,
+        soil_hum4 FLOAT
+    );
     """)
         conn.commit()
         cur.close()
@@ -41,9 +55,66 @@ def index():
         print("Error during database operation:", e)
     return render_template('index.html')
 
-# Route to handle file uploads
+#Routes ti handle sera date
+@app.route('/add_sera_data', methods=['POST'])
+def add_sera():
+    data = request.get_json()
+    sera_id = data.get('sera_id')
+    light = data.get('light')
+    temp_in = data.get('temp_in')
+    temp_out = data.get('temp_out')
+    hum_in = data.get('hum_in')
+    hum_out = data.get('hum_out')
+    soil_hum1 = data.get('soil_hum1')
+    soil_hum2 = data.get('soil_hum2')
+    soil_hum3 = data.get('soil_hum3')
+    soil_hum4 = data.get('soil_hum4')
 
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        UPDATE sera
+        SET light = %s, temp_in = %s, temp_out = %s, hum_in = %s, hum_out = %s, soil_hum1 = %s, soil_hum2 = %s, soil_hum3 = %s, soil_hum4 = %s
+        WHERE sera_id = %s
+    """, (light, temp_in, temp_out, hum_in, hum_out, soil_hum1, soil_hum2, soil_hum3, soil_hum4, sera_id))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return jsonify({"message": "Data added successfully!"}), 201  
 
+@app.route('/get_sera_data', methods=['GET'])
+def get_sera_data():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT * FROM sera")
+    rows = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    sera_data = []
+    for row in rows:
+        sera_data.append({
+            'sera_id': row[0],
+            'light': row[1],
+            'temp_in': row[2],
+            'temp_out': row[3],
+            'hum_in': row[4],
+            'hum_out': row[5],
+            'soil_hum1': row[6],
+            'soil_hum2': row[7],
+            'soil_hum3': row[8],
+            'soil_hum4': row[9]
+        })
+    
+    return jsonify(sera_data), 200
+
+# Route to handle file uploads ---> photo
 @app.route('/upload', methods=['POST'])
 def upload_file():
 
