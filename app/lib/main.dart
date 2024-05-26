@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'message': isAutoMode ? 'Switched to Auto Mode' : 'Switched to Manual Mode',
+        'message': isAutoMode ? '65' : '64', //auto mode: 65; manual mode: 64
       }),
     );
 
@@ -223,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
 
       if (response.statusCode == 201) {
-        print('Switched to Auto Mode before closing');
+        print('65'); //treci in auto mode
       } else {
         print('Failed to switch to Auto Mode before closing');
       }
@@ -234,14 +234,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       isHatchOpen = !isHatchOpen;
     });
-    sendRequest(isHatchOpen ? 'Hatch opened' : 'Hatch closed');
+    sendRequest(isHatchOpen ? '129' : '128'); //129-open trapa  128-close trapa
   }
 
   void toggleLight() {
     setState(() {
       isLightOn = !isLightOn;
     });
-    sendRequest(isLightOn ? 'Light turned on' : 'Light turned off');
+    sendRequest(isLightOn ? '193' : '193');  //turn on off led
   }
 
   @override
@@ -282,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(isAutoMode ? 'Auto Mode' : 'Manual Mode', style: TextStyle(fontSize: 16)),
+                      Text(isAutoMode ? 'Auto mode' : 'Manual mode', style: TextStyle(fontSize: 16)),  //65 automode  --- 64 manual mode
                       Switch(
                         value: isAutoMode,
                         onChanged: (value) {
@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? toggleHatch
                     : null,
-                label: Text(isHatchOpen ? 'Close Hatch' : 'Open Hatch', style: TextStyle(color: Colors.white)),
+                label: Text(isHatchOpen ? 'Close hatch' : 'Open hatch', style: TextStyle(color: Colors.white)), //128-deschide trapa, 129 inchide trapa
                 icon: Icon(isHatchOpen ? Icons.close : Icons.open_in_new, color: Colors.white),
                 backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
               ),
@@ -315,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? toggleLight
                     : null,
-                label: Text(isLightOn ? 'Turn Off Light' : 'Turn On Light', style: TextStyle(color: Colors.white)),
+                label: Text(isLightOn ? 'Turn off light' : 'Turn on light', style: TextStyle(color: Colors.white)), //on/off lumina
                 icon: Icon(isLightOn ? Icons.lightbulb_outline : Icons.lightbulb, color: Colors.white),
                 backgroundColor: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode'] ? Color(0xFF6699CC) : Colors.grey,
               ),
@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('Water Plant 1');
+                  sendRequest('194'); //Water Plant 1
                 }
                     : null,
                 label: Text('Water Plant 1', style: TextStyle(color: Colors.white)),
@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('Water Plant 2');
+                  sendRequest('196'); //Water Plant 2
                 }
                     : null,
                 label: Text('Water Plant 2', style: TextStyle(color: Colors.white)),
@@ -354,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('Water Plant 3');
+                  sendRequest('200'); //Water Plant 3
                 }
                     : null,
                 label: Text('Water Plant 3', style: TextStyle(color: Colors.white)),
@@ -364,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               FloatingActionButton.extended(
                 onPressed: plantData.isNotEmpty && !plantData[0]['auto_mode_manual_mode']
                     ? () {
-                  sendRequest('Water Plant 4');
+                  sendRequest('208'); //Water Plant 4
                 }
                     : null,
                 label: Text('Water Plant 4', style: TextStyle(color: Colors.white)),
