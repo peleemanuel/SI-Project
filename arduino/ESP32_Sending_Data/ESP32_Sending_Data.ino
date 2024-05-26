@@ -20,10 +20,9 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
+#include "config.h"
 // Replace with your network credentials
-const char *ssid = "TP-Link_3144";
-const char *password = "qwer4321";
-const char *serverName = "http://192.168.0.122:5000/upload2";
+
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 const char *htmlPage = R"rawliteral(
