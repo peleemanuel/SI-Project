@@ -223,8 +223,17 @@ def process_and_predict_image(image_path, plants_model, pests_model):
     if pest_confidence < 0.80:
         pest_label = "healthy"
 
-    print(
-        f"Plant Prediction - {plant_prediction.split('___')[1]}\n Pest Prediction - {pest_label}")
+    return f"Plant Prediction - {plant_prediction.split('___')[1]}\n Pest Prediction - {pest_label}"
+
+def main_script():
+    pests_model = TFLiteModel(dir_path='.')
+    pests_model.load()
+
+    folder_path = '../server/'
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith(('.jpeg', '.jpg', '.png', '.bmp')):
+            image_path = os.path.join(folder_path, filename.lower())
+            return process_and_predict_image(image_path, plants_model, pests_model)
 
 
 if __name__ == "__main__":

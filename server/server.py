@@ -3,6 +3,13 @@ import psycopg2
 from werkzeug.utils import secure_filename
 import logging
 from flask_cors import CORS  # Import the CORS package
+import requests
+import subprocess
+import os
+
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from models.classify import *
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for the Flask app
@@ -82,7 +89,9 @@ def add_sera():
     soil_hum2 = data.get('soil_hum2')
     soil_hum3 = data.get('soil_hum3')
     soil_hum4 = data.get('soil_hum4')
-    auto_mode_manual_mode = data.get('auto_mode_manual_mode', True)  # Default to True if not provided
+
+    auto_mode_manual_mode_num = data.get('auto_mode_manual_mode')  # Default to True if not provided
+    auto_mode_manual_mode = True if auto_mode_manual_mode_num == 1 else False
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -115,6 +124,9 @@ def add_sera():
 #PUNETI VALORILE CARE TREBUIE AICI****************************************************************
 @app.route('/get_status', methods=['GET'])
 def get_status():
+    output = main_script()
+    print("Status data fetched successfully")
+    print(output)
     status = {
         "plant_status": "healthy",
         "pest_status": "healthy"
@@ -158,6 +170,11 @@ def handle_action():
     data = request.get_json()
     message = data.get('message')
     print(f"Action received: {message}")
+    data_command = {
+    "command": message
+    }   
+    response = requests.post('http://192.168.1.154/command', json=data_command)
+    print("ESP response:", response.text)
     return jsonify({"message": f"Action {message} received!"}), 201
 
 # Route to handle file uploads ---> photo

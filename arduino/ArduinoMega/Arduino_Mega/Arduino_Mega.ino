@@ -72,9 +72,9 @@ unsigned long previousMillis = 0;
 void loop() {
   unsigned long currentMillis = millis();
   // Serial.println("Verific serialul");
-  if (Serial.available() > 0) {
+  if (Serial1.available() > 0) {
 
-    String receivedString = Serial.readString();
+    String receivedString = Serial1.readString();
     int serialOP = 0;
     if (isNumber(receivedString)) {
       serialOP = atoi(receivedString.c_str());
@@ -234,18 +234,20 @@ void loop() {
         turnOffRelay(RELAY_LED_BAND);
       }
     }
-
-    autoStopWaterPump(RELAY_WATER_1, relayWater1Timer, relayWater1Active);
-    autoStopWaterPump(RELAY_WATER_2, relayWater2Timer, relayWater2Active);
-    autoStopWaterPump(RELAY_WATER_3, relayWater3Timer, relayWater3Active);
-    autoStopWaterPump(RELAY_WATER_4, relayWater4Timer, relayWater4Active);
-
-
-  String httpRequestData = "{\"sera_id\":1,\"hum_in\":24,\"hum_out\":24,\"temp_in\":30,\"temp_out\":30,\"light\":" + String(light) + ",\"soil_hum1\":24,\"soil_hum2\":24,\"soil_hum3\":24,\"soil_hum4\":24}";
+    
+    bool workModeSend = false;
+    if (workingMode == AUTO_MODE) {
+      workModeSend = true;
+    }
+    
     // send data to ESP
-    String parameters = "{\"sera_id\":1,\"hum_in\":" + String(hum1) + ",\"hum_out\":" + String(hum2) + ",\"temp_in\":" + String(tempInterior) + ",\"temp_out\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_hum1\":" + String(soil_hum1) + ",\"soil_hum2\":" + String(soil_hum2) + ",\"soil_hum3\":" + String(soil_hum3) + ",\"soil_hum4\":" + String(soil_hum4) + "}";
+    String parameters = "{\"sera_id\":1,\"hum_in\":" + String(hum1) + ",\"hum_out\":" + String(hum2) + ",\"temp_in\":" + String(tempInterior) + ",\"temp_out\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_hum1\":" + String(soil_hum1) + ",\"soil_hum2\":" + String(soil_hum2) + ",\"soil_hum3\":" + String(soil_hum3) + ",\"soil_hum4\":" + String(soil_hum4) + ", \"auto_mode_manual_mode\":" + String(workModeSend) +"}";
     Serial1.println(parameters);
   }
+  autoStopWaterPump(RELAY_WATER_1, relayWater1Timer, relayWater1Active);
+  autoStopWaterPump(RELAY_WATER_2, relayWater2Timer, relayWater2Active);
+  autoStopWaterPump(RELAY_WATER_3, relayWater3Timer, relayWater3Active);
+  autoStopWaterPump(RELAY_WATER_4, relayWater4Timer, relayWater4Active);
 }
 
 bool isNumber(String str) {
