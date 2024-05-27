@@ -74,9 +74,51 @@ def index():
         print("Error during database operation:", e)
     return render_template('index.html')
 
+def aux_get_sera_data():
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM sera")
+    rows = cur.fetchall()
+    sera_data = []
+    for row in rows:
+        sera_data.append({
+            'sera_id': row[0],
+            'light': row[1],
+            'temp_in': row[2],
+            'temp_out': row[3],
+            'hum_in': row[4],
+            'hum_out': row[5],
+            'soil_hum1': row[6],
+            'soil_hum2': row[7],
+            'soil_hum3': row[8],
+            'soil_hum4': row[9],
+            'auto_mode_manual_mode': row[10]
+        })
+    
+    return json.dumps(sera_data)
+
 # Routes to handle sera data
 @app.route('/add_sera_data', methods=['POST'])
 def add_sera():
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    present_data = aux_get_sera_data()
+    present_data = json.loads(present_data)
+    
+    current_light = present_data[0]['light']
+    current_temp_in = present_data[0]['temp_in']
+    current_temp_out = present_data[0]['temp_out']
+    current_hum_in = present_data[0]['hum_in']
+    current_hum_out = present_data[0]['hum_out']
+    current_soil_hum1 = present_data[0]['soil_hum1']
+    current_soil_hum2 = present_data[0]['soil_hum2']
+    current_soil_hum3 = present_data[0]['soil_hum3']
+    current_soil_hum4 = present_data[0]['soil_hum4']
+    
     data = request.get_json()
     print("Data received:", data)
     sera_id = data.get('sera_id')
@@ -93,8 +135,25 @@ def add_sera():
     auto_mode_manual_mode_num = data.get('auto_mode_manual_mode')  # Default to True if not provided
     auto_mode_manual_mode = True if auto_mode_manual_mode_num == 1 else False
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # Check if the data is valid
+    if light < 0:
+        light = current_light
+    if temp_in < -40:
+        temp_in = current_temp_in
+    if temp_out < -40:
+        temp_out = current_temp_out
+    if hum_in < 0:
+        hum_in = current_hum_in
+    if hum_out < 0:
+        hum_out = current_hum_out
+    if soil_hum1 < 0:
+        soil_hum1 = current_soil_hum1
+    if soil_hum2 < 0:
+        soil_hum2 = current_soil_hum2
+    if soil_hum3 < 0:
+        soil_hum3 = current_soil_hum3
+    if soil_hum4 < 0:
+        soil_hum4 = current_soil_hum4
 
     # Query pentru upsert
     cur.execute("""
@@ -127,9 +186,19 @@ def get_status():
     output = main_script()
     print("Status data fetched successfully")
     print(output)
+    
+    # in cazul in care output nu este gol, atunci verifica daca este compus din 2 linii, daca da, atunci ia continutul de dupa "-"
+    if output:
+        if len(output.split('\n')) == 2:
+            plant_status = output.split('\n')[0].split('- ')[1].strip()
+            pest_status = output.split('\n')[1].split('- ')[1].strip()
+        else:
+            plant_status = "healthy"
+            pest_status = "healthy"
+    
     status = {
-        "plant_status": "healthy",
-        "pest_status": "healthy"
+        "plant_status": f"{plant_status}",
+        "pest_status": f"{pest_status}"
     }
     print("Status data fetched successfully")
     return jsonify(status), 200

@@ -109,13 +109,13 @@ def load_model(model_path):
     return model
 
 
-with open('./classes.txt', 'r') as file:
+with open('../models/classes.txt', 'r') as file:
     classes = file.readlines()
 
 classes = [label.strip() for label in classes]
 
 plants_model = to_device(CNN_NeuralNet(3, len(classes)), device)
-plants_model.load_state_dict(torch.load('./plants.pth'))
+plants_model.load_state_dict(torch.load('../models/plants.pth'))
 
 
 def preprocess_image(image_path):
@@ -140,7 +140,7 @@ def predict_image(img, model):
 class TFLiteModel:
     def __init__(self, dir_path):
         model_dir = os.path.dirname(dir_path)
-        with open(os.path.join(model_dir, "signature.json"), "r") as f:
+        with open(os.path.join(model_dir, "../models/signature.json"), "r") as f:
             self.signature = json.load(f)
         self.model_file = os.path.join(
             model_dir, self.signature.get("filename"))
@@ -225,8 +225,9 @@ def process_and_predict_image(image_path, plants_model, pests_model):
 
     return f"Plant Prediction - {plant_prediction.split('___')[1]}\n Pest Prediction - {pest_label}"
 
+
 def main_script():
-    pests_model = TFLiteModel(dir_path='.')
+    pests_model = TFLiteModel(dir_path='../models/')
     pests_model.load()
 
     folder_path = '../server/'
@@ -236,13 +237,13 @@ def main_script():
             return process_and_predict_image(image_path, plants_model, pests_model)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    pests_model = TFLiteModel(dir_path='.')
-    pests_model.load()
+#     pests_model = TFLiteModel(dir_path='.')
+#     pests_model.load()
 
-    folder_path = '../server/'
-    for filename in os.listdir(folder_path):
-        if filename.lower().endswith(('.jpeg', '.jpg', '.png', '.bmp')):
-            image_path = os.path.join(folder_path, filename.lower())
-            process_and_predict_image(image_path, plants_model, pests_model)
+#     folder_path = '../server/'
+#     for filename in os.listdir(folder_path):
+#         if filename.lower().endswith(('.jpeg', '.jpg', '.png', '.bmp')):
+#             image_path = os.path.join(folder_path, filename.lower())
+#             process_and_predict_image(image_path, plants_model, pests_model)
