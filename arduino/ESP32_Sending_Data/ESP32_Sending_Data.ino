@@ -186,7 +186,7 @@ void SendRequest(String httpRequestData) {
   HTTPClient http;
 
   // Start connection and send HTTP header
-  http.begin("http://192.168.1.246:5000/add_sera_data");
+  http.begin(BASE_URL ADD_SERA);
   http.addHeader("Content-Type", "application/json");
 
   // Send HTTP POST request
