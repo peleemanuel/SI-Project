@@ -91,7 +91,6 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
   Serial.println("WiFi connected");
 
   Serial.println("IP Address: " + WiFi.localIP().toString());
@@ -117,8 +116,7 @@ void setup() {
         deserializeJson(doc, *message);
         const char *command = doc["command"];  // Presupunem că JSON-ul conține un câmp "command"
 
-        Serial.print("Comanda primita: ");
-        Serial.println(command);
+        Serial.print(command);
 
         // Aici puteți adăuga cod pentru a executa o acțiune bazată pe comandă
 
@@ -137,36 +135,26 @@ void loop() {
     // Citește caracterul primit
     String receivedString = Serial.readString();
     SendRequest(receivedString);
+
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    return;
   }
 
-  // delay(10000);  // Wait for 3 seconds
+  if (sendPhoto(fb->buf, fb->len)) {
+  } else {
+  }
 
-  // SendRequest();
-  // light++;
+  esp_camera_fb_return(fb);
 
-  // camera_fb_t *fb = esp_camera_fb_get();
-  // if (!fb) {
-  //   Serial.println("Camera capture failed");
-  //   return;
-  // }
-
-  // Serial.println("Sending photo to server...");
-
-  // if (sendPhoto(fb->buf, fb->len)) {
-  //   Serial.println("Photo sent successfully");
-  // } else {
-  //   Serial.println("Failed to send photo");
-  // }
-
-  // esp_camera_fb_return(fb);
-
-  // ws.binaryAll(fb->buf, fb->len);  // Send image over WebSocket
-  // esp_camera_fb_return(fb);
+  ws.binaryAll(fb->buf, fb->len);  // Send image over WebSocket
+  esp_camera_fb_return(fb);
+  }
 }
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   if (type == WS_EVT_CONNECT) {
-    Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+    //Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
   }
 }
 
@@ -174,9 +162,9 @@ bool sendPhoto(uint8_t *image, size_t len) {
   WiFiClient client;
   HTTPClient http;
   for (int i = 0; i < len; i++) {
-    Serial.print(image[i]);
+    //Serial.print(image[i]);
   }
-  Serial.println();
+  //Serial.println();
   http.begin(client, serverName);
   http.addHeader("Content-Type", "image/jpeg");
 
@@ -184,10 +172,10 @@ bool sendPhoto(uint8_t *image, size_t len) {
 
   if (httpResponseCode > 0) {
     String response = http.getString();
-    Serial.println("HTTP Response code: " + String(httpResponseCode));
-    Serial.println("Response: " + response);
+    //Serial.println("HTTP Response code: " + String(httpResponseCode));
+    //Serial.println("Response: " + response);
   } else {
-    Serial.println("Error on sending POST: " + String(httpResponseCode));
+    //Serial.println("Error on sending POST: " + String(httpResponseCode));
   }
 
   http.end();
@@ -198,16 +186,16 @@ void SendRequest(String httpRequestData) {
   HTTPClient http;
 
   // Start connection and send HTTP header
-  http.begin("http://192.168.1.246:5000/add_sera_data");
+  http.begin(BASE_URL ADD_SERA);
   http.addHeader("Content-Type", "application/json");
 
   // Send HTTP POST request
   int httpResponseCode = http.POST(httpRequestData);
 
-  Serial.print("HTTP Response code: ");
-  Serial.println(httpResponseCode);
-  Serial.print("Sent data: ");
-  Serial.println(httpRequestData);
+  //Serial.print("HTTP Response code: ");
+  //Serial.println(httpResponseCode);
+  //Serial.print("Sent data: ");
+  //Serial.println(httpRequestData);
 
   // Free resources
   http.end();
