@@ -234,14 +234,46 @@ void loop() {
         turnOffRelay(RELAY_LED_BAND);
       }
     }
-    
+
+    //water
+    if (soil_hum1 > WATER_THRESHOLD) {
+      if (!relayWater1Active) {  // Only turn on if it was previously off
+        turnOnRelay(RELAY_WATER_1);
+        relayWater1Timer = currentMillis;  // Reset the timer
+        relayWater1Active = true;          // Mark the relay as active
+      }
+    }
+    if (soil_hum2 > WATER_THRESHOLD) {
+      if (!relayWater2Active) {  // Only turn on if it was previously off
+        turnOnRelay(RELAY_WATER_2);
+        relayWater2Timer = currentMillis;  // Reset the timer
+        relayWater2Active = true;          // Mark the relay as active
+      }
+    }
+    if (soil_hum3 > WATER_THRESHOLD) {
+      if (!relayWater3Active) {  // Only turn on if it was previously off
+        turnOnRelay(RELAY_WATER_3);
+        relayWater3Timer = currentMillis;  // Reset the timer
+        relayWater3Active = true;          // Mark the relay as active
+      }
+    }
+    if (soil_hum4 > WATER_THRESHOLD) {
+      if (!relayWater4Active) {  // Only turn on if it was previously off
+        turnOnRelay(RELAY_WATER_4);
+        relayWater4Timer = currentMillis;  // Reset the timer
+        relayWater4Active = true;          // Mark the relay as active
+      }
+    }
+
+
     bool workModeSend = false;
     if (workingMode == AUTO_MODE) {
       workModeSend = true;
     }
-    
+
     // send data to ESP
-    String parameters = "{\"sera_id\":1,\"hum_in\":" + String(hum1) + ",\"hum_out\":" + String(hum2) + ",\"temp_in\":" + String(tempInterior) + ",\"temp_out\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_hum1\":" + String(soil_hum1) + ",\"soil_hum2\":" + String(soil_hum2) + ",\"soil_hum3\":" + String(soil_hum3) + ",\"soil_hum4\":" + String(soil_hum4) + ", \"auto_mode_manual_mode\":" + String(workModeSend) +"}";
+    String parameters = "{\"sera_id\":1,\"hum_in\":" + String(hum1) + ",\"hum_out\":" + String(hum2) + ",\"temp_in\":" + String(tempInterior) + ",\"temp_out\":" + String(tempExterior) + ",\"light\":" + String(light) + ",\"soil_hum1\":" + String(soil_hum1) + ",\"soil_hum2\":" + String(soil_hum2) + ",\"soil_hum3\":" + String(soil_hum3) + ",\"soil_hum4\":" + String(soil_hum4) + ", \"auto_mode_manual_mode\":" + String(workModeSend) + "}";
+    Serial.println(parameters);
     Serial1.println(parameters);
   }
   autoStopWaterPump(RELAY_WATER_1, relayWater1Timer, relayWater1Active);

@@ -3,6 +3,7 @@
 
 #define WAITDELAY 10000  // time in milliseconds
 #define WATER_PUMP_DELAY 3000 // time in mill, plant watering time
+
 // working mode
 #define MANUAL_MODE 0
 #define AUTO_MODE 1
@@ -28,8 +29,8 @@
 #define SERVO_CLOSE 69
 
 // interior temperature threshold
-#define INTERIOR_TEMP_THRESHOLD 15.0f
-
+#define INTERIOR_TEMP_THRESHOLD 25.0f
+#define WATER_THRESHOLD 700.0f
 // light threshold for led band
 #define LIGHT_THRESHOLD 50
 
