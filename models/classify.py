@@ -115,7 +115,7 @@ with open('../models/classes.txt', 'r') as file:
 classes = [label.strip() for label in classes]
 
 plants_model = to_device(CNN_NeuralNet(3, len(classes)), device)
-plants_model.load_state_dict(torch.load('../models/plants.pth'))
+plants_model.load_state_dict(torch.load('../models/plants.pth', map_location=device))
 
 
 def preprocess_image(image_path):
