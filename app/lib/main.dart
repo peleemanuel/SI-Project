@@ -282,12 +282,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Text('Light: ${plant['light']}'),
                             Text('Temp In: ${plant['temp_in']}°C'),
                             Text('Temp Out: ${plant['temp_out']}°C'),
-                            Text('Humidity In: ${plant['hum_in']}%'),
-                            Text('Humidity Out: ${plant['hum_out']}%'),
-                            Text('Soil Humidity 1: ${plant['soil_hum1']}%'),
-                            Text('Soil Humidity 2: ${plant['soil_hum2']}%'),
-                            Text('Soil Humidity 3: ${plant['soil_hum3']}%'),
-                            Text('Soil Humidity 4: ${plant['soil_hum4']}%'),
+                            Text('Humidity In: ${plant['hum_in']/6}%'),
+                            Text('Humidity Out: ${plant['hum_out']/6}%'),
+                            Text('Soil Humidity 1: ${plant['soil_hum1']/6}%'),
+                            Text('Soil Humidity 2: ${plant['soil_hum2']/6}%'),
+                            Text('Soil Humidity 3: ${plant['soil_hum3']/6}%'),
+                            Text('Soil Humidity 4: ${plant['soil_hum4']/6}%'),
                             Text(
                                 'Plant Status: ${statusData['plant_status']}'), // Afișează statusul plantei
                             Text(

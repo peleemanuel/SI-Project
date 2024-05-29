@@ -1,0 +1,10 @@
+absl-py
+torch
+torchvision
+pillow
+flask
+psycopg2-binary
+werkzeug
+flask-cors
+requests
+numpy
