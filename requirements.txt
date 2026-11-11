@@ -1,7 +1,7 @@
 absl-py
 torch
 torchvision
-pillow
+pillow>=13.0.0
 flask
 psycopg2-binary
 werkzeug
